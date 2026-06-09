@@ -16,6 +16,7 @@ import { Route as CheckTradeRouteImport } from './routes/check-trade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TradeCodeRouteImport } from './routes/trade.$code'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const TermsRoute = TermsRouteImport.update({
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradeCodeRoute = TradeCodeRouteImport.update({
+  id: '/trade/$code',
+  path: '/trade/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/start-trade': typeof StartTradeRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/trade/$code': typeof TradeCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/start-trade': typeof StartTradeRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/trade/$code': typeof TradeCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/start-trade': typeof StartTradeRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/trade/$code': typeof TradeCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/start-trade'
     | '/terms'
     | '/admin'
+    | '/trade/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/start-trade'
     | '/terms'
     | '/admin'
+    | '/trade/$code'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/start-trade'
     | '/terms'
     | '/_authenticated/admin'
+    | '/trade/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -126,6 +138,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   StartTradeRoute: typeof StartTradeRoute
   TermsRoute: typeof TermsRoute
+  TradeCodeRoute: typeof TradeCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trade/$code': {
+      id: '/trade/$code'
+      path: '/trade/$code'
+      fullPath: '/trade/$code'
+      preLoaderRoute: typeof TradeCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -208,7 +228,18 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   StartTradeRoute: StartTradeRoute,
   TermsRoute: TermsRoute,
+  TradeCodeRoute: TradeCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
