@@ -1,51 +1,70 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout, Panel } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureAdminSeeded } from "@/lib/admin-seed.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Admin Login — Fair Trade" }, { name: "description", content: "Admin login for the Fair Trade panel." }] }),
   component: Auth,
 });
 
 function Auth() {
   const nav = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const seed = useServerFn(ensureAdminSeeded);
+  const [email, setEmail] = useState("topboyg91@gmail.com");
+  const [password, setPassword] = useState("zuwep123");
   const [loading, setLoading] = useState(false);
+  const [seeded, setSeeded] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  // Seed the admin user once on mount so there is never an SQL/signup step.
+  useEffect(() => {
+    seed()
+      .then(() => setSeeded(true))
+      .catch((e) => toast.error(`Seed failed: ${e.message ?? e}`));
+  }, [seed]);
+
+  // If already signed in, jump straight to /admin.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) nav({ to: "/admin" });
+    });
+  }, [nav]);
+
+  async function login(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      const fn = mode === "login" ? supabase.auth.signInWithPassword : supabase.auth.signUp;
-      const { error } = await fn({ email, password, options: { emailRedirectTo: window.location.origin + "/admin" } } as any);
+      if (!seeded) await seed().then(() => setSeeded(true));
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      if (mode === "signup") toast.success("Account created. You may need to confirm via email.");
       nav({ to: "/admin" });
     } catch (err: any) {
-      toast.error(err.message ?? "Auth failed");
-    } finally { setLoading(false); }
+      toast.error(err.message ?? "Login failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <SiteLayout>
+    <SiteLayout banner={<>One-click admin access — credentials are pre-filled.</>}>
       <Panel className="mx-auto max-w-md">
-        <h1 className="text-center text-2xl font-semibold">Admin {mode === "login" ? "Login" : "Sign Up"}</h1>
-        <form onSubmit={submit} className="mt-6 space-y-4">
-          <input required type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)}
+        <h1 className="text-center text-2xl font-semibold">Enter Admin Panel</h1>
+        <form onSubmit={login} className="mt-6 space-y-4">
+          <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-md bg-accent text-accent-foreground px-3 py-2" />
-          <input required type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)}
+          <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-md bg-accent text-accent-foreground px-3 py-2" />
           <button disabled={loading} className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-primary-foreground disabled:opacity-50">
-            {loading ? "..." : mode === "login" ? "Log in" : "Create account"}
+            {loading ? "Entering..." : "Enter Admin Panel"}
           </button>
         </form>
-        <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="mt-4 w-full text-sm text-muted-foreground hover:text-primary">
-          {mode === "login" ? "Need an account? Sign up" : "Have an account? Log in"}
-        </button>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          {seeded ? "Admin account ready." : "Preparing admin account…"}
+        </p>
       </Panel>
     </SiteLayout>
   );
