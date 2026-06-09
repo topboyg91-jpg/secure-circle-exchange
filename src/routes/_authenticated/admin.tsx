@@ -15,6 +15,8 @@ type Trade = {
   name: string; amount: number; amount_usd: number | null; quoted_rate: number | null;
   agreement: string; finalization_hours: number; created_at: string; funded_at: string | null;
   admin_notes: string | null;
+  withdrawal_address: string | null; withdrawal_requested_at: string | null;
+  withdrawal_approved_at: string | null; withdrawal_tx: string | null;
 };
 
 const STATUSES = ["created", "funded", "released", "refunded", "disputed", "cancelled"] as const;
@@ -73,6 +75,19 @@ function Admin() {
     const { error } = await supabase.from("trades").update(patch).eq("id", t.id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Trade ${t.trade_code} → ${status}`);
+    refresh();
+  }
+
+  async function approveWithdrawal(t: Trade, tx: string) {
+    if (!t.withdrawal_address) { toast.error("No withdrawal address submitted yet"); return; }
+    const patch: any = {
+      status: "released",
+      withdrawal_approved_at: new Date().toISOString(),
+      withdrawal_tx: tx || null,
+    };
+    const { error } = await supabase.from("trades").update(patch).eq("id", t.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Withdrawal approved for ${t.trade_code}`);
     refresh();
   }
 
@@ -164,7 +179,12 @@ function Admin() {
               <p className="text-sm text-muted-foreground">Approve funding, release, or refund every trade from here.</p>
             </div>
             {trades.length === 0 && <SandBox>No trades yet.</SandBox>}
-            {trades.map((t) => <TradeCard key={t.id} t={t} onStatus={setStatus} onNotes={saveNotes} onDelete={deleteTrade} />)}
+            {trades.filter(t => t.withdrawal_requested_at && !t.withdrawal_approved_at).length > 0 && (
+              <div className="rounded-md border border-secondary bg-secondary/10 p-3 text-sm">
+                <b>Pending withdrawals:</b> {trades.filter(t => t.withdrawal_requested_at && !t.withdrawal_approved_at).length} — scroll to find badges marked <span className="rounded bg-secondary px-1 text-secondary-foreground">WITHDRAW REQUESTED</span>.
+              </div>
+            )}
+            {trades.map((t) => <TradeCard key={t.id} t={t} onStatus={setStatus} onNotes={saveNotes} onDelete={deleteTrade} onApproveWithdrawal={approveWithdrawal} />)}
           </div>
         )}
       </Panel>
