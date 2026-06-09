@@ -46,8 +46,10 @@ export type Database = {
       }
       trades: {
         Row: {
+          admin_notes: string | null
           agreement: string
           amount: number
+          amount_usd: number | null
           created_at: string
           creator_role: string
           finalization_hours: number
@@ -56,13 +58,17 @@ export type Database = {
           name: string
           password_hash: string
           payment_method: string
+          quoted_currency: string | null
+          quoted_rate: number | null
           status: string
           trade_code: string
           updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           agreement: string
           amount: number
+          amount_usd?: number | null
           created_at?: string
           creator_role: string
           finalization_hours: number
@@ -71,13 +77,17 @@ export type Database = {
           name: string
           password_hash: string
           payment_method: string
+          quoted_currency?: string | null
+          quoted_rate?: number | null
           status?: string
           trade_code?: string
           updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           agreement?: string
           amount?: number
+          amount_usd?: number | null
           created_at?: string
           creator_role?: string
           finalization_hours?: number
@@ -86,6 +96,8 @@ export type Database = {
           name?: string
           password_hash?: string
           payment_method?: string
+          quoted_currency?: string | null
+          quoted_rate?: number | null
           status?: string
           trade_code?: string
           updated_at?: string
