@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout, SandBox, Panel } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { sha256, randomPassword } from "@/lib/hash";
+import { getCryptoQuote } from "@/lib/prices.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/start-trade")({
@@ -13,18 +15,38 @@ export const Route = createFileRoute("/start-trade")({
 const finalizationOptions = [6, 12, 24, 48, 72, 168];
 
 function StartTrade() {
+  const quoteFn = useServerFn(getCryptoQuote);
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
-  const [method, setMethod] = useState("");
+  const [method, setMethod] = useState<"" | "BTC" | "XMR">("");
   const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
+  const [usd, setUsd] = useState("");
   const [agreement, setAgreement] = useState("");
   const [hours, setHours] = useState<number | "">("");
+
+  const [step, setStep] = useState<"details" | "quote">("details");
+  const [quote, setQuote] = useState<{ rate: number; cryptoAmount: number } | null>(null);
+  const [loadingQuote, setLoadingQuote] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ code: string; password: string } | null>(null);
 
-  async function submit(e: React.FormEvent) {
+  async function fetchQuote(e: React.FormEvent) {
     e.preventDefault();
     if (!method || !hours) { toast.error("Please complete all required fields."); return; }
+    if (!(Number(usd) > 0)) { toast.error("Enter a USD amount."); return; }
+    setLoadingQuote(true);
+    try {
+      const q = await quoteFn({ data: { currency: method, usd: Number(usd) } });
+      setQuote({ rate: q.rate, cryptoAmount: q.cryptoAmount });
+      setStep("quote");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to fetch quote");
+    } finally {
+      setLoadingQuote(false);
+    }
+  }
+
+  async function confirm() {
+    if (!quote || !method || !hours) return;
     setSubmitting(true);
     try {
       const password = randomPassword(16);
@@ -35,7 +57,10 @@ function StartTrade() {
           creator_role: role,
           payment_method: method,
           name,
-          amount: Number(amount),
+          amount: quote.cryptoAmount,
+          amount_usd: Number(usd),
+          quoted_rate: quote.rate,
+          quoted_currency: method,
           agreement,
           finalization_hours: Number(hours),
           password_hash,
@@ -69,6 +94,30 @@ function StartTrade() {
     );
   }
 
+  if (step === "quote" && quote && method) {
+    return (
+      <SiteLayout banner={<>Live quote — rate is locked for this trade.</>}>
+        <Panel className="mx-auto max-w-xl">
+          <h1 className="text-center text-3xl">Confirm Trade</h1>
+          <SandBox className="mt-6 space-y-2">
+            <Row k="USD amount" v={`$${Number(usd).toLocaleString()}`} />
+            <Row k="Rate" v={`1 ${method} = $${quote.rate.toLocaleString()}`} />
+            <Row k={`Equivalent in ${method}`} v={`${quote.cryptoAmount} ${method}`} />
+            <Row k="Payment method" v={method === "BTC" ? "Bitcoin" : "Monero"} />
+            <Row k="Your role" v={role} />
+            <Row k="Finalization" v={`${hours}h`} />
+          </SandBox>
+          <div className="mt-6 flex justify-center gap-3">
+            <button onClick={() => setStep("details")} className="rounded-md bg-muted px-4 py-2 font-semibold text-muted-foreground">Back</button>
+            <button disabled={submitting} onClick={confirm} className="rounded-md bg-secondary px-5 py-2 font-semibold text-secondary-foreground disabled:opacity-50">
+              {submitting ? "Starting..." : "Start Escrow"}
+            </button>
+          </div>
+        </Panel>
+      </SiteLayout>
+    );
+  }
+
   return (
     <SiteLayout banner={<>Everything below is binding and can't be changed!</>}>
       <SandBox className="relative mb-6">
@@ -85,7 +134,7 @@ function StartTrade() {
 
       <Panel>
         <h1 className="text-center text-3xl">New Trade</h1>
-        <form onSubmit={submit} className="mt-6 space-y-5">
+        <form onSubmit={fetchQuote} className="mt-6 space-y-5">
           <fieldset className="space-y-3">
             <legend className="font-semibold">You Are The:</legend>
             {(["buyer", "seller"] as const).map((r) => (
@@ -97,7 +146,7 @@ function StartTrade() {
           </fieldset>
 
           <Field label="Payment Method:">
-            <select value={method} onChange={(e) => setMethod(e.target.value)} className="rounded-md bg-accent text-accent-foreground px-3 py-2">
+            <select value={method} onChange={(e) => setMethod(e.target.value as any)} className="rounded-md bg-accent text-accent-foreground px-3 py-2">
               <option value="">Choose</option>
               <option value="XMR">Monero (XMR)</option>
               <option value="BTC">Bitcoin (BTC)</option>
@@ -109,9 +158,15 @@ function StartTrade() {
               className="w-full rounded-md bg-accent text-accent-foreground px-3 py-2 placeholder:text-accent-foreground/60" />
           </Field>
 
-          <Field label="Trade Amount:">
-            <input required type="number" step="0.0001" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Enter Transaction Amount"
-              className="w-64 rounded-md bg-accent text-accent-foreground px-3 py-2 placeholder:text-accent-foreground/60" />
+          <Field label="Trade Amount (USD):">
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-muted-foreground">$</span>
+              <input required type="number" step="0.01" min="1" value={usd} onChange={(e) => setUsd(e.target.value)}
+                placeholder="Enter amount in USD"
+                className="w-64 rounded-md bg-accent text-accent-foreground px-3 py-2 placeholder:text-accent-foreground/60" />
+              <span className="text-sm text-muted-foreground">USD</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Next step will show the live equivalent in {method || "BTC/XMR"}.</p>
           </Field>
 
           <Field label="Trade Agreement:">
@@ -127,8 +182,8 @@ function StartTrade() {
             </select>
           </Field>
 
-          <button disabled={submitting} className="rounded-md bg-secondary px-5 py-2 font-semibold text-secondary-foreground disabled:opacity-50">
-            {submitting ? "Creating..." : "Start Trade"}
+          <button disabled={loadingQuote} className="rounded-md bg-secondary px-5 py-2 font-semibold text-secondary-foreground disabled:opacity-50">
+            {loadingQuote ? "Fetching live rate..." : "Continue → See Crypto Amount"}
           </button>
         </form>
       </Panel>
@@ -143,4 +198,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
+  return <div className="flex justify-between gap-4"><span className="font-semibold">{k}:</span><span className="break-all">{v}</span></div>;
 }
