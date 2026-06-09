@@ -115,7 +115,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      trades_public: {
+        Row: {
+          agreement: string | null
+          amount: number | null
+          created_at: string | null
+          creator_role: string | null
+          finalization_hours: number | null
+          funded_at: string | null
+          id: string | null
+          name: string | null
+          payment_method: string | null
+          status: string | null
+          trade_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreement?: string | null
+          amount?: number | null
+          created_at?: string | null
+          creator_role?: string | null
+          finalization_hours?: number | null
+          funded_at?: string | null
+          id?: string | null
+          name?: string | null
+          payment_method?: string | null
+          status?: string | null
+          trade_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreement?: string | null
+          amount?: number | null
+          created_at?: string | null
+          creator_role?: string | null
+          finalization_hours?: number | null
+          funded_at?: string | null
+          id?: string | null
+          name?: string | null
+          payment_method?: string | null
+          status?: string | null
+          trade_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
