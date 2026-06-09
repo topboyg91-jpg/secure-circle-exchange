@@ -63,6 +63,10 @@ export type Database = {
           status: string
           trade_code: string
           updated_at: string
+          withdrawal_address: string | null
+          withdrawal_approved_at: string | null
+          withdrawal_requested_at: string | null
+          withdrawal_tx: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -82,6 +86,10 @@ export type Database = {
           status?: string
           trade_code?: string
           updated_at?: string
+          withdrawal_address?: string | null
+          withdrawal_approved_at?: string | null
+          withdrawal_requested_at?: string | null
+          withdrawal_tx?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -101,6 +109,10 @@ export type Database = {
           status?: string
           trade_code?: string
           updated_at?: string
+          withdrawal_address?: string | null
+          withdrawal_approved_at?: string | null
+          withdrawal_requested_at?: string | null
+          withdrawal_tx?: string | null
         }
         Relationships: []
       }
@@ -131,6 +143,7 @@ export type Database = {
         Row: {
           agreement: string | null
           amount: number | null
+          amount_usd: number | null
           created_at: string | null
           creator_role: string | null
           finalization_hours: number | null
@@ -138,13 +151,20 @@ export type Database = {
           id: string | null
           name: string | null
           payment_method: string | null
+          quoted_currency: string | null
+          quoted_rate: number | null
           status: string | null
           trade_code: string | null
           updated_at: string | null
+          withdrawal_address: string | null
+          withdrawal_approved_at: string | null
+          withdrawal_requested_at: string | null
+          withdrawal_tx: string | null
         }
         Insert: {
           agreement?: string | null
           amount?: number | null
+          amount_usd?: number | null
           created_at?: string | null
           creator_role?: string | null
           finalization_hours?: number | null
@@ -152,13 +172,20 @@ export type Database = {
           id?: string | null
           name?: string | null
           payment_method?: string | null
+          quoted_currency?: string | null
+          quoted_rate?: number | null
           status?: string | null
           trade_code?: string | null
           updated_at?: string | null
+          withdrawal_address?: string | null
+          withdrawal_approved_at?: string | null
+          withdrawal_requested_at?: string | null
+          withdrawal_tx?: string | null
         }
         Update: {
           agreement?: string | null
           amount?: number | null
+          amount_usd?: number | null
           created_at?: string | null
           creator_role?: string | null
           finalization_hours?: number | null
@@ -166,9 +193,15 @@ export type Database = {
           id?: string | null
           name?: string | null
           payment_method?: string | null
+          quoted_currency?: string | null
+          quoted_rate?: number | null
           status?: string | null
           trade_code?: string | null
           updated_at?: string | null
+          withdrawal_address?: string | null
+          withdrawal_approved_at?: string | null
+          withdrawal_requested_at?: string | null
+          withdrawal_tx?: string | null
         }
         Relationships: []
       }
@@ -180,6 +213,36 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      request_withdrawal: {
+        Args: { _address: string; _password_hash: string; _trade_code: string }
+        Returns: {
+          agreement: string | null
+          amount: number | null
+          amount_usd: number | null
+          created_at: string | null
+          creator_role: string | null
+          finalization_hours: number | null
+          funded_at: string | null
+          id: string | null
+          name: string | null
+          payment_method: string | null
+          quoted_currency: string | null
+          quoted_rate: number | null
+          status: string | null
+          trade_code: string | null
+          updated_at: string | null
+          withdrawal_address: string | null
+          withdrawal_approved_at: string | null
+          withdrawal_requested_at: string | null
+          withdrawal_tx: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trades_public"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
