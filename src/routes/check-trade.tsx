@@ -27,7 +27,7 @@ function CheckTrade() {
     const { data: addr } = await supabase
       .from("crypto_addresses")
       .select("*")
-      .eq("currency", data.payment_method)
+      .eq("currency", data.payment_method as string)
       .eq("active", true);
     setAddresses(addr ?? []);
   }
