@@ -87,7 +87,9 @@ function StartTrade() {
             <p className="text-sm">Share the Trade ID with the other party. Use the password on the Check Trade page to manage the trade.</p>
           </SandBox>
           <div className="mt-6 flex justify-center gap-3">
-            <Link to="/check-trade" className="rounded-md bg-secondary px-4 py-2 font-semibold text-secondary-foreground">Go to Check Trade</Link>
+            <Link to="/trade/$code" params={{ code: result.code }} search={{ pw: result.password }}
+              className="rounded-md bg-primary px-4 py-2 font-semibold text-primary-foreground">Open Escrow Tracker →</Link>
+            <Link to="/check-trade" className="rounded-md bg-secondary px-4 py-2 font-semibold text-secondary-foreground">Check Trade</Link>
           </div>
         </Panel>
       </SiteLayout>

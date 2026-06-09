@@ -15,6 +15,8 @@ type Trade = {
   name: string; amount: number; amount_usd: number | null; quoted_rate: number | null;
   agreement: string; finalization_hours: number; created_at: string; funded_at: string | null;
   admin_notes: string | null;
+  withdrawal_address: string | null; withdrawal_requested_at: string | null;
+  withdrawal_approved_at: string | null; withdrawal_tx: string | null;
 };
 
 const STATUSES = ["created", "funded", "released", "refunded", "disputed", "cancelled"] as const;
@@ -73,6 +75,19 @@ function Admin() {
     const { error } = await supabase.from("trades").update(patch).eq("id", t.id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Trade ${t.trade_code} → ${status}`);
+    refresh();
+  }
+
+  async function approveWithdrawal(t: Trade, tx: string) {
+    if (!t.withdrawal_address) { toast.error("No withdrawal address submitted yet"); return; }
+    const patch: any = {
+      status: "released",
+      withdrawal_approved_at: new Date().toISOString(),
+      withdrawal_tx: tx || null,
+    };
+    const { error } = await supabase.from("trades").update(patch).eq("id", t.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Withdrawal approved for ${t.trade_code}`);
     refresh();
   }
 
@@ -164,7 +179,12 @@ function Admin() {
               <p className="text-sm text-muted-foreground">Approve funding, release, or refund every trade from here.</p>
             </div>
             {trades.length === 0 && <SandBox>No trades yet.</SandBox>}
-            {trades.map((t) => <TradeCard key={t.id} t={t} onStatus={setStatus} onNotes={saveNotes} onDelete={deleteTrade} />)}
+            {trades.filter(t => t.withdrawal_requested_at && !t.withdrawal_approved_at).length > 0 && (
+              <div className="rounded-md border border-secondary bg-secondary/10 p-3 text-sm">
+                <b>Pending withdrawals:</b> {trades.filter(t => t.withdrawal_requested_at && !t.withdrawal_approved_at).length} — scroll to find badges marked <span className="rounded bg-secondary px-1 text-secondary-foreground">WITHDRAW REQUESTED</span>.
+              </div>
+            )}
+            {trades.map((t) => <TradeCard key={t.id} t={t} onStatus={setStatus} onNotes={saveNotes} onDelete={deleteTrade} onApproveWithdrawal={approveWithdrawal} />)}
           </div>
         )}
       </Panel>
@@ -172,13 +192,15 @@ function Admin() {
   );
 }
 
-function TradeCard({ t, onStatus, onNotes, onDelete }: {
+function TradeCard({ t, onStatus, onNotes, onDelete, onApproveWithdrawal }: {
   t: Trade;
   onStatus: (t: Trade, s: string) => void;
   onNotes: (t: Trade, n: string) => void;
   onDelete: (t: Trade) => void;
+  onApproveWithdrawal: (t: Trade, tx: string) => void;
 }) {
   const [notes, setNotes] = useState(t.admin_notes ?? "");
+  const [tx, setTx] = useState(t.withdrawal_tx ?? "");
   const badgeColor: Record<string, string> = {
     created: "bg-muted text-muted-foreground",
     funded: "bg-secondary text-secondary-foreground",
@@ -187,12 +209,16 @@ function TradeCard({ t, onStatus, onNotes, onDelete }: {
     disputed: "bg-destructive text-destructive-foreground",
     cancelled: "bg-muted text-muted-foreground",
   };
+  const pendingWithdraw = !!t.withdrawal_requested_at && !t.withdrawal_approved_at;
   return (
     <div className="rounded-md border border-border bg-card/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <code className="text-sm font-bold">{t.trade_code}</code>
           <span className={`rounded px-2 py-0.5 text-xs font-semibold ${badgeColor[t.status] ?? "bg-muted"}`}>{t.status}</span>
+          {pendingWithdraw && (
+            <span className="rounded bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">WITHDRAW REQUESTED</span>
+          )}
           <span className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()}</span>
         </div>
         <button onClick={() => onDelete(t)} className="text-xs text-destructive hover:underline">Delete</button>
@@ -205,6 +231,27 @@ function TradeCard({ t, onStatus, onNotes, onDelete }: {
         <div><b>Finalize:</b> {t.finalization_hours}h</div>
         <div><b>Funded at:</b> {t.funded_at ? new Date(t.funded_at).toLocaleString() : "—"}</div>
       </div>
+
+      {(t.withdrawal_address || t.withdrawal_requested_at) && (
+        <div className="mt-3 rounded-md border border-secondary/40 bg-secondary/5 p-3 text-sm space-y-2">
+          <div className="font-semibold text-secondary-foreground/90">Seller withdrawal</div>
+          <div><b>Address:</b> <span className="break-all">{t.withdrawal_address ?? "—"}</span></div>
+          <div><b>Requested:</b> {t.withdrawal_requested_at ? new Date(t.withdrawal_requested_at).toLocaleString() : "—"}</div>
+          <div><b>Approved:</b> {t.withdrawal_approved_at ? new Date(t.withdrawal_approved_at).toLocaleString() : "—"}</div>
+          {!t.withdrawal_approved_at && t.withdrawal_address && (
+            <div className="flex flex-wrap gap-2">
+              <input value={tx} onChange={(e) => setTx(e.target.value)} placeholder="Payout tx hash (optional)"
+                className="flex-1 rounded-md bg-accent text-accent-foreground px-3 py-1 text-xs" />
+              <button onClick={() => onApproveWithdrawal(t, tx)}
+                className="rounded-md bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                Approve & Release
+              </button>
+            </div>
+          )}
+          {t.withdrawal_tx && <div><b>Tx:</b> <span className="break-all">{t.withdrawal_tx}</span></div>}
+        </div>
+      )}
+
       <details className="mt-3">
         <summary className="cursor-pointer text-sm text-muted-foreground hover:text-primary">Agreement</summary>
         <p className="mt-2 whitespace-pre-wrap text-sm">{t.agreement}</p>
