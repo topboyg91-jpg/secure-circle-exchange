@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteLayout, Panel, SandBox } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,12 @@ function CheckTrade() {
             <Row k="Status" v={trade.status} />
             <Row k="Creator" v={trade.creator_role} />
             <Row k="Finalization" v={`${trade.finalization_hours}h`} />
+            <div className="pt-2">
+              <Link to="/trade/$code" params={{ code: trade.trade_code }}
+                className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                Open Escrow Tracker →
+              </Link>
+            </div>
             <div>
               <div className="font-semibold">Agreement:</div>
               <p className="whitespace-pre-wrap text-sm">{trade.agreement}</p>
