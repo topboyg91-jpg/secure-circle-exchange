@@ -85,6 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Fair Trade — anonymous crypto escrow" },
+      { name: "twitter:description", content: "Anonymous, moderated crypto escrow service supporting Monero and Bitcoin." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8938f06e-96ea-4d35-8929-e70c80d1d2ed/id-preview-396881a8--59511f34-00a3-4d1b-8601-9b9de7e086e9.lovable.app-1780977909407.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8938f06e-96ea-4d35-8929-e70c80d1d2ed/id-preview-396881a8--59511f34-00a3-4d1b-8601-9b9de7e086e9.lovable.app-1780977909407.png" },
     ],
     links: [
       {
