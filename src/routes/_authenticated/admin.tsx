@@ -51,9 +51,11 @@ function Admin() {
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await supabase.from("crypto_addresses").insert({ currency, address, label: label || null, active: false });
+    if (!address.trim()) { toast.error("Enter an address"); return; }
+    const { error } = await supabase.from("crypto_addresses")
+      .insert({ currency, address: address.trim(), label: label || null, active: true });
     if (error) { toast.error(error.message); return; }
-    setAddress(""); setLabel(""); toast.success("Saved — toggle Active to approve."); refresh();
+    setAddress(""); setLabel(""); toast.success("Address saved & active."); refresh();
   }
 
   async function toggle(a: Addr) {
