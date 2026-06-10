@@ -46,12 +46,19 @@ export type Database = {
       }
       trades: {
         Row: {
+          accepted_at: string | null
           admin_notes: string | null
           agreement: string
           amount: number
           amount_usd: number | null
+          completed_at: string | null
           created_at: string
           creator_role: string
+          declined_at: string | null
+          delivered_at: string | null
+          deposit_address: string | null
+          deposit_address_id: string | null
+          disputed_at: string | null
           finalization_hours: number
           funded_at: string | null
           id: string
@@ -69,12 +76,19 @@ export type Database = {
           withdrawal_tx: string | null
         }
         Insert: {
+          accepted_at?: string | null
           admin_notes?: string | null
           agreement: string
           amount: number
           amount_usd?: number | null
+          completed_at?: string | null
           created_at?: string
           creator_role: string
+          declined_at?: string | null
+          delivered_at?: string | null
+          deposit_address?: string | null
+          deposit_address_id?: string | null
+          disputed_at?: string | null
           finalization_hours: number
           funded_at?: string | null
           id?: string
@@ -92,12 +106,19 @@ export type Database = {
           withdrawal_tx?: string | null
         }
         Update: {
+          accepted_at?: string | null
           admin_notes?: string | null
           agreement?: string
           amount?: number
           amount_usd?: number | null
+          completed_at?: string | null
           created_at?: string
           creator_role?: string
+          declined_at?: string | null
+          delivered_at?: string | null
+          deposit_address?: string | null
+          deposit_address_id?: string | null
+          disputed_at?: string | null
           finalization_hours?: number
           funded_at?: string | null
           id?: string
@@ -114,7 +135,15 @@ export type Database = {
           withdrawal_requested_at?: string | null
           withdrawal_tx?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trades_deposit_address_id_fkey"
+            columns: ["deposit_address_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -141,11 +170,17 @@ export type Database = {
     Views: {
       trades_public: {
         Row: {
+          accepted_at: string | null
           agreement: string | null
           amount: number | null
           amount_usd: number | null
+          completed_at: string | null
           created_at: string | null
           creator_role: string | null
+          declined_at: string | null
+          delivered_at: string | null
+          deposit_address: string | null
+          disputed_at: string | null
           finalization_hours: number | null
           funded_at: string | null
           id: string | null
@@ -162,11 +197,17 @@ export type Database = {
           withdrawal_tx: string | null
         }
         Insert: {
+          accepted_at?: string | null
           agreement?: string | null
           amount?: number | null
           amount_usd?: number | null
+          completed_at?: string | null
           created_at?: string | null
           creator_role?: string | null
+          declined_at?: string | null
+          delivered_at?: string | null
+          deposit_address?: string | null
+          disputed_at?: string | null
           finalization_hours?: number | null
           funded_at?: string | null
           id?: string | null
@@ -183,11 +224,17 @@ export type Database = {
           withdrawal_tx?: string | null
         }
         Update: {
+          accepted_at?: string | null
           agreement?: string | null
           amount?: number | null
           amount_usd?: number | null
+          completed_at?: string | null
           created_at?: string | null
           creator_role?: string | null
+          declined_at?: string | null
+          delivered_at?: string | null
+          deposit_address?: string | null
+          disputed_at?: string | null
           finalization_hours?: number | null
           funded_at?: string | null
           id?: string | null
@@ -217,11 +264,53 @@ export type Database = {
       request_withdrawal: {
         Args: { _address: string; _password_hash: string; _trade_code: string }
         Returns: {
+          accepted_at: string | null
           agreement: string | null
           amount: number | null
           amount_usd: number | null
+          completed_at: string | null
           created_at: string | null
           creator_role: string | null
+          declined_at: string | null
+          delivered_at: string | null
+          deposit_address: string | null
+          disputed_at: string | null
+          finalization_hours: number | null
+          funded_at: string | null
+          id: string | null
+          name: string | null
+          payment_method: string | null
+          quoted_currency: string | null
+          quoted_rate: number | null
+          status: string | null
+          trade_code: string | null
+          updated_at: string | null
+          withdrawal_address: string | null
+          withdrawal_approved_at: string | null
+          withdrawal_requested_at: string | null
+          withdrawal_tx: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trades_public"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      trade_action: {
+        Args: { _action: string; _password_hash: string; _trade_code: string }
+        Returns: {
+          accepted_at: string | null
+          agreement: string | null
+          amount: number | null
+          amount_usd: number | null
+          completed_at: string | null
+          created_at: string | null
+          creator_role: string | null
+          declined_at: string | null
+          delivered_at: string | null
+          deposit_address: string | null
+          disputed_at: string | null
           finalization_hours: number | null
           funded_at: string | null
           id: string | null
