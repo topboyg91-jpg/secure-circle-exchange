@@ -1,0 +1,6 @@
+# Appended to /etc/tor/torrc by deploy.sh (idempotent).
+# Do not edit here — edit /etc/tor/torrc and restart tor.
+
+HiddenServiceDir /var/lib/tor/fairtrade
+HiddenServicePort 80 127.0.0.1:8080
+HiddenServiceVersion 3
