@@ -183,38 +183,46 @@ function TradePage() {
         {/* Escrow holding */}
         {isFunded && !isReleased && !isCancelled && (
           <Section title="In escrow" n={4} done>
-            <p className="text-sm">Funds are secured. Seller delivers goods, then marks delivered.</p>
-            {!isDelivered && trade.creator_role === "seller" && (
+            <p className="text-sm">Funds are secured. Seller delivers the goods/service, then marks delivered so the buyer can confirm.</p>
+            {!isDelivered && (
               <button disabled={busy} onClick={() => act("mark_delivered")}
                 className="mt-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground disabled:opacity-50">
-                Mark Delivered
+                Seller: Mark as Delivered
               </button>
             )}
+            {isDelivered && <p className="mt-2 text-xs italic text-muted-foreground">Seller marked delivered — waiting for buyer to confirm receipt.</p>}
           </Section>
         )}
 
         {/* Release */}
-        {isDelivered && !isReleased && trade.creator_role === "buyer" && (
-          <Section title="Release funds" n={5}>
-            <p className="text-sm">Confirm the seller delivered as agreed, then release escrow.</p>
+        {isFunded && !isReleased && (
+          <Section title="Buyer confirmation" n={5} done={isDelivered}>
+            <p className="text-sm">Once the buyer has received the goods/service, confirm receipt to release the escrow to the seller.</p>
             <button disabled={busy} onClick={() => act("release")}
               className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
-              Release to Seller
+              Buyer: Mark as Received & Release Funds
             </button>
           </Section>
         )}
 
         {/* Seller withdrawal */}
-        {isFunded && !isReleased && trade.creator_role === "seller" && (
-          <Section title="Set payout wallet" n={5}>
-            <p className="text-sm">Enter the {trade.payment_method} address where the released funds should be sent.</p>
+        {isFunded && (
+          <Section title="Seller payout wallet" n={6} done={isReleased}>
+            <p className="text-sm">
+              {isReleased
+                ? "Funds released. Confirm or update the payout address — admin will broadcast the payout transaction."
+                : `Seller: enter the ${trade.payment_method} address where funds should be sent once the buyer releases escrow. You can submit this now so payout is instant after release.`}
+            </p>
             <input value={withdrawAddr} onChange={(e) => setWithdrawAddr(e.target.value)}
               placeholder={`Your ${trade.payment_method} address`}
               className="mt-2 w-full rounded-md bg-accent text-accent-foreground px-3 py-2 text-sm" />
             <button disabled={busy} onClick={submitWithdrawal}
               className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
-              {trade.withdrawal_address ? "Update payout address" : "Submit payout address"}
+              {trade.withdrawal_address ? "Update payout address" : isReleased ? "Withdraw to this address" : "Save payout address"}
             </button>
+            {isReleased && !trade.withdrawal_tx && (
+              <p className="mt-2 text-xs italic text-muted-foreground">Awaiting admin to broadcast payout transaction…</p>
+            )}
           </Section>
         )}
 
