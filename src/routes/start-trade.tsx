@@ -1,21 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout, SandBox, Panel } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { sha256, randomPassword } from "@/lib/hash";
-import { getCryptoQuote } from "@/lib/prices.functions";
+import { getCryptoQuote } from "@/lib/prices";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/start-trade")({
-  head: () => ({ meta: [{ title: "Start Trade — Fair Trade" }, { name: "description", content: "Create a new escrow trade. You will receive a Trade ID and a secret password." }] }),
   component: StartTrade,
 });
 
 const finalizationOptions = [6, 12, 24, 48, 72, 168];
 
 function StartTrade() {
-  const quoteFn = useServerFn(getCryptoQuote);
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
   const [method, setMethod] = useState<"" | "BTC" | "XMR">("");
   const [name, setName] = useState("");
@@ -35,7 +32,7 @@ function StartTrade() {
     if (!(Number(usd) > 0)) { toast.error("Enter a USD amount."); return; }
     setLoadingQuote(true);
     try {
-      const q = await quoteFn({ data: { currency: method, usd: Number(usd) } });
+      const q = await getCryptoQuote({ currency: method, usd: Number(usd) });
       setQuote({ rate: q.rate, cryptoAmount: q.cryptoAmount });
       setStep("quote");
     } catch (err: any) {
