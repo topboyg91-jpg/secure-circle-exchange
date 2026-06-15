@@ -1,31 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout, Panel } from "@/components/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureAdminSeeded } from "@/lib/admin-seed.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
-  head: () => ({ meta: [{ title: "Admin Login — Fair Trade" }, { name: "description", content: "Admin login for the Fair Trade panel." }] }),
   component: Auth,
 });
 
 function Auth() {
   const nav = useNavigate();
-  const seed = useServerFn(ensureAdminSeeded);
   const [email, setEmail] = useState("topboyg91@gmail.com");
   const [password, setPassword] = useState("zuwep123");
   const [loading, setLoading] = useState(false);
-  const [seeded, setSeeded] = useState(false);
-
-  // Seed the admin user once on mount so there is never an SQL/signup step.
-  useEffect(() => {
-    seed()
-      .then(() => setSeeded(true))
-      .catch((e) => toast.error(`Seed failed: ${e.message ?? e}`));
-  }, [seed]);
 
   // If already signed in, jump straight to /admin.
   useEffect(() => {
@@ -38,7 +25,6 @@ function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (!seeded) await seed().then(() => setSeeded(true));
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       nav({ to: "/admin" });
@@ -62,9 +48,6 @@ function Auth() {
             {loading ? "Entering..." : "Enter Admin Panel"}
           </button>
         </form>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          {seeded ? "Admin account ready." : "Preparing admin account…"}
-        </p>
       </Panel>
     </SiteLayout>
   );
