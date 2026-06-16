@@ -48,24 +48,20 @@ function StartTrade() {
     try {
       const password = randomPassword(16);
       const password_hash = await sha256(password);
-      const { data, error } = await supabase
-        .from("trades")
-        .insert({
-          creator_role: role,
-          payment_method: method,
-          name,
-          amount: quote.cryptoAmount,
-          amount_usd: Number(usd),
-          quoted_rate: quote.rate,
-          quoted_currency: method,
-          agreement,
-          finalization_hours: Number(hours),
-          password_hash,
-        })
-        .select("trade_code")
-        .single();
+      const { data, error } = await supabase.rpc("create_trade", {
+        _creator_role: role,
+        _payment_method: method,
+        _name: name,
+        _amount: quote.cryptoAmount,
+        _amount_usd: Number(usd),
+        _quoted_rate: quote.rate,
+        _quoted_currency: method,
+        _agreement: agreement,
+        _finalization_hours: Number(hours),
+        _password_hash: password_hash,
+      });
       if (error) throw error;
-      setResult({ code: data.trade_code, password });
+      setResult({ code: data as string, password });
     } catch (err: any) {
       toast.error(err.message ?? "Failed to create trade");
     } finally {
