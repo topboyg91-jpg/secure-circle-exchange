@@ -7,17 +7,6 @@ const cache = new Map<Currency, { rate: number; at: number }>();
 async function tryFetchRate(currency: Currency): Promise<number | null> {
   // 1) Preferred: Supabase Edge Function proxy. Reachable over Tor via HTTPS.
   try {
-    const { data, error } = await supabase.functions.invoke("get-price", {
-      method: "GET" as any,
-      // @ts-expect-error - functions.invoke supports query via path
-      headers: {},
-    } as any);
-    if (!error) {
-      const v = Number((data as any)?.rate);
-      if (Number.isFinite(v) && v > 0) return v;
-    }
-  } catch { /* try direct */ }
-  try {
     const { data: { session } } = await supabase.auth.getSession();
     const base = (supabase as any).supabaseUrl ?? "";
     const key = (supabase as any).supabaseKey ?? "";
