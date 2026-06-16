@@ -40,6 +40,12 @@ function TradePage() {
   const [trade, setTrade] = useState<Trade | null>(null);
   const [withdrawAddr, setWithdrawAddr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sellerLink, setSellerLink] = useState<string>("");
+
+  useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "seller_link").maybeSingle()
+      .then(({ data }) => setSellerLink(((data?.value as string) ?? "").trim()));
+  }, []);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -121,6 +127,14 @@ function TradePage() {
           <Row k="Amount" v={`${trade.amount} ${trade.payment_method}${trade.amount_usd ? ` ($${trade.amount_usd})` : ""}`} />
           <Row k="Delivery time" v={`${trade.finalization_hours}h`} />
         </SandBox>
+
+        {trade.creator_role === "seller" && sellerLink && (
+          <SandBox className="mt-4">
+            <div className="font-semibold mb-1">Seller info link</div>
+            <a href={sellerLink} target="_blank" rel="noopener noreferrer"
+              className="break-all text-primary underline text-sm">{sellerLink}</a>
+          </SandBox>
+        )}
 
         {/* Password prompt — required for all actions */}
         <div className="mt-4">
