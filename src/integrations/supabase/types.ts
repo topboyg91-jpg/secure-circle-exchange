@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       crypto_addresses: {
         Row: {
           active: boolean
@@ -254,6 +272,21 @@ export type Database = {
       }
     }
     Functions: {
+      create_trade: {
+        Args: {
+          _agreement: string
+          _amount: number
+          _amount_usd: number
+          _creator_role: string
+          _finalization_hours: number
+          _name: string
+          _password_hash: string
+          _payment_method: string
+          _quoted_currency: string
+          _quoted_rate: number
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
