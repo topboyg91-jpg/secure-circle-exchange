@@ -23,6 +23,7 @@ function StartTrade() {
   const [step, setStep] = useState<"details" | "quote">("details");
   const [quote, setQuote] = useState<{ rate: number; cryptoAmount: number } | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
+  const [manualRate, setManualRate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ code: string; password: string } | null>(null);
 
@@ -36,10 +37,21 @@ function StartTrade() {
       setQuote({ rate: q.rate, cryptoAmount: q.cryptoAmount });
       setStep("quote");
     } catch (err: any) {
-      toast.error(err.message ?? "Failed to fetch quote");
+      // Tor / offline fallback: let the user enter the rate manually so the trade still proceeds.
+      toast.message("Live price feed unreachable — enter the rate manually to continue.");
+      setQuote(null);
+      setStep("quote");
     } finally {
       setLoadingQuote(false);
     }
+  }
+
+  function applyManualRate() {
+    const r = Number(manualRate);
+    if (!(r > 0)) { toast.error("Enter a valid rate."); return; }
+    const u = Number(usd);
+    const cryptoAmount = Number((u / r).toFixed(method === "BTC" ? 8 : 6));
+    setQuote({ rate: r, cryptoAmount });
   }
 
   async function confirm() {
@@ -89,25 +101,43 @@ function StartTrade() {
     );
   }
 
-  if (step === "quote" && quote && method) {
+  if (step === "quote" && method) {
     return (
       <SiteLayout banner={<>Live quote — rate is locked for this trade.</>}>
         <Panel className="mx-auto max-w-xl">
           <h1 className="text-center text-3xl">Confirm Trade</h1>
-          <SandBox className="mt-6 space-y-2">
-            <Row k="USD amount" v={`$${Number(usd).toLocaleString()}`} />
-            <Row k="Rate" v={`1 ${method} = $${quote.rate.toLocaleString()}`} />
-            <Row k={`Equivalent in ${method}`} v={`${quote.cryptoAmount} ${method}`} />
-            <Row k="Payment method" v={method === "BTC" ? "Bitcoin" : "Monero"} />
-            <Row k="Your role" v={role} />
-            <Row k="Finalization" v={`${hours}h`} />
-          </SandBox>
-          <div className="mt-6 flex justify-center gap-3">
-            <button onClick={() => setStep("details")} className="rounded-md bg-muted px-4 py-2 font-semibold text-muted-foreground">Back</button>
-            <button disabled={submitting} onClick={confirm} className="rounded-md bg-secondary px-5 py-2 font-semibold text-secondary-foreground disabled:opacity-50">
-              {submitting ? "Starting..." : "Start Escrow"}
-            </button>
-          </div>
+          {quote ? (
+            <>
+              <SandBox className="mt-6 space-y-2">
+                <Row k="USD amount" v={`$${Number(usd).toLocaleString()}`} />
+                <Row k="Rate" v={`1 ${method} = $${quote.rate.toLocaleString()}`} />
+                <Row k={`Equivalent in ${method}`} v={`${quote.cryptoAmount} ${method}`} />
+                <Row k="Payment method" v={method === "BTC" ? "Bitcoin" : "Monero"} />
+                <Row k="Your role" v={role} />
+                <Row k="Finalization" v={`${hours}h`} />
+              </SandBox>
+              <div className="mt-6 flex justify-center gap-3">
+                <button onClick={() => { setStep("details"); setQuote(null); }} className="rounded-md bg-muted px-4 py-2 font-semibold text-muted-foreground">Back</button>
+                <button disabled={submitting} onClick={confirm} className="rounded-md bg-secondary px-5 py-2 font-semibold text-secondary-foreground disabled:opacity-50">
+                  {submitting ? "Starting..." : "Start Escrow"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <SandBox className="mt-6 space-y-3">
+              <p className="text-sm">Price feed couldn't be reached (common on Tor). Enter the current <strong>{method}/USD</strong> rate to continue.</p>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">1 {method} = $</span>
+                <input type="number" step="0.01" min="0" value={manualRate} onChange={(e) => setManualRate(e.target.value)}
+                  placeholder="e.g. 65000"
+                  className="w-48 rounded-md bg-accent text-accent-foreground px-3 py-2 placeholder:text-accent-foreground/60" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => { setStep("details"); setQuote(null); }} className="rounded-md bg-muted px-4 py-2 font-semibold text-muted-foreground">Back</button>
+                <button onClick={applyManualRate} className="rounded-md bg-secondary px-4 py-2 font-semibold text-secondary-foreground">Use rate</button>
+              </div>
+            </SandBox>
+          )}
         </Panel>
       </SiteLayout>
     );
