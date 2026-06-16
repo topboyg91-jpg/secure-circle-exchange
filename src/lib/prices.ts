@@ -1,8 +1,26 @@
 type Currency = "BTC" | "XMR";
 
+import { supabase } from "@/integrations/supabase/client";
+
 const cache = new Map<Currency, { rate: number; at: number }>();
 
 async function tryFetchRate(currency: Currency): Promise<number | null> {
+  // 1) Preferred: Supabase Edge Function proxy. Reachable over Tor via HTTPS.
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const base = (supabase as any).supabaseUrl ?? "";
+    const key = (supabase as any).supabaseKey ?? "";
+    const r = await fetch(`${base}/functions/v1/get-price?currency=${currency}`, {
+      headers: { apikey: key, Authorization: `Bearer ${session?.access_token ?? key}` },
+    });
+    if (r.ok) {
+      const j: any = await r.json();
+      const v = Number(j?.rate);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+  } catch { /* fall through */ }
+
+  // 2) Last-resort: direct browser fetches (works on clearnet, usually blocked on Tor)
   const sources: Array<() => Promise<number | null>> = [
     async () => {
       const r = await fetch(`https://api.coinbase.com/v2/prices/${currency}-USD/spot`);
