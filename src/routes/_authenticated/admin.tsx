@@ -28,15 +28,28 @@ function Admin() {
   const [address, setAddress] = useState("");
   const [label, setLabel] = useState("");
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<"trades" | "addresses">("trades");
+  const [tab, setTab] = useState<"trades" | "addresses" | "settings">("trades");
+  const [sellerLink, setSellerLink] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
 
   async function refresh() {
-    const [{ data: a }, { data: t }] = await Promise.all([
+    const [{ data: a }, { data: t }, { data: s }] = await Promise.all([
       supabase.from("crypto_addresses").select("*").order("created_at", { ascending: false }),
       supabase.from("trades").select("*").order("created_at", { ascending: false }),
+      supabase.from("app_settings").select("value").eq("key", "seller_link").maybeSingle(),
     ]);
     setAddrs((a ?? []) as Addr[]);
     setTrades((t ?? []) as Trade[]);
+    setSellerLink((s?.value ?? "") as string);
+  }
+
+  async function saveSellerLink() {
+    setSavingLink(true);
+    const { error } = await supabase.from("app_settings")
+      .upsert({ key: "seller_link", value: sellerLink, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    setSavingLink(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Seller link saved");
   }
 
   useEffect(() => {
@@ -116,10 +129,10 @@ function Admin() {
         </div>
 
         <div className="mt-4 flex gap-2">
-          {(["trades", "addresses"] as const).map((k) => (
+          {(["trades", "addresses", "settings"] as const).map((k) => (
             <button key={k} onClick={() => setTab(k)}
               className={`rounded-md px-4 py-2 text-sm font-semibold ${tab === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-              {k === "trades" ? `Escrow Trades (${trades.length})` : `Crypto Addresses (${addrs.length})`}
+              {k === "trades" ? `Escrow Trades (${trades.length})` : k === "addresses" ? `Crypto Addresses (${addrs.length})` : "Settings"}
             </button>
           ))}
         </div>
@@ -187,6 +200,19 @@ function Admin() {
               </div>
             )}
             {trades.map((t) => <TradeCard key={t.id} t={t} onStatus={setStatus} onNotes={saveNotes} onDelete={deleteTrade} onApproveWithdrawal={approveWithdrawal} />)}
+          </div>
+        )}
+
+        {tab === "settings" && (
+          <div className="mt-6 space-y-4">
+            <h2 className="text-lg font-semibold">Seller Link</h2>
+            <p className="text-sm text-muted-foreground">This link is shown to the seller inside every active trade room (e.g. payout instructions, support channel, or escrow info page).</p>
+            <input value={sellerLink} onChange={(e) => setSellerLink(e.target.value)} placeholder="https://..."
+              className="w-full rounded-md bg-accent text-accent-foreground px-3 py-2 text-sm" />
+            <button disabled={savingLink} onClick={saveSellerLink}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+              {savingLink ? "Saving..." : "Save Seller Link"}
+            </button>
           </div>
         )}
       </Panel>
