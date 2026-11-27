@@ -1,5 +1,7 @@
 # Roadmap
 
-- [ ] Inspect the provided Telegram bot project and check whether it is accessible from this workspace.
-- [ ] Connect the Telegram bot and implement send-only escrow alerts without changing existing trade workflows.
-- [ ] Validate alert delivery and review the current build/runtime logs.
+- [x] Inspect the provided project URL; it resolves to an unrelated event-ticketing app, not bot code.
+- [x] Link the Telegram bot connection to this site.
+- [ ] Implement send-only escrow alerts without changing existing trade workflows.
+- [ ] Add admin configuration for the alert destination and verify delivery.
+- [ ] Review the current build/runtime logs and confirm the alert flow.
